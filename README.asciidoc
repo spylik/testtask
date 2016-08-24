@@ -1,0 +1,4 @@
+image:https://api.travis-ci.org/spylik/testtask.svg?branch=master[title="Build Status", link="https://travis-ci.org/spylik/testtask"] image:https://codecov.io/gh/spylik/testtask/branch/master/graph/badge.svg[title="Codecov", link="https://codecov.io/gh/spylik/testtask/branches/master"]
+
+Test task implementation
+
