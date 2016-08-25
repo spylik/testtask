@@ -1,6 +1,6 @@
 {application, testtask, [
 	{description, "Test task. Special for Mikhail"},
-	{vsn, "0.0.4"},
+	{vsn, "0.0.5"},
 	{modules, []},
 	{registered, []},
 	{applications, [
