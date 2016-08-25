@@ -18,8 +18,6 @@
 
 -export([default/0]).
 
--compile(export_all).
-
 % @doc hardcoded values and specs for test task.
 % By default we going to find largest polindrome produced by multiply 3 digits numbers.
 -spec default() -> Result when
