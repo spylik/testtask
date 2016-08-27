@@ -18,7 +18,7 @@
 
 -module(task6_fw).
 
--include("deps/teaser/include/utils.hrl").
+%-include("deps/teaser/include/utils.hrl").
 
 % gen server is here
 -behaviour(gen_server).
@@ -37,29 +37,59 @@
 -define(SERVER, ?MODULE).
 
 -record(state, {ioDevice}).
+-type state() :: #state{}.
 
 % ----------------------------- gen_server part --------------------------------
+
+% @doc start api
+-spec start_link(Filename) -> Result when
+    Filename :: file:filename(),
+    Result :: {ok,Pid} | ignore | {error,Error},
+    Pid :: pid(),
+    Error :: {already_started,Pid} | term().
 
 start_link(Filename) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [Filename], []).
 
+% @doc stop api. Defaul is sync call gen_server:stop
+-spec stop() -> ok.
+
 stop() ->
     gen_server:stop(?SERVER).
 
+% @doc gen_server init. We going to open file and keep ioDevice in state
+-spec init([Filename]) -> Result when
+    Filename :: file:filename(),
+    Result :: {ok, state()}.
+
 init([Filename]) ->
-%    Filename = "task6.csv",
     {ok, IoDevice} = file:open(Filename,[append]),
     {ok, #state{ioDevice = IoDevice}}.
 
 %--------------handle_call----------------
 
-% handle_call for all other thigs
+% @doc callbacks for gen_server handle_call.
+-spec handle_call(Message, From, State) -> Result when
+    Message :: term(),
+    From :: {pid(), Tag},
+    Tag :: term(),
+    State :: term(),
+    Result :: {reply, ok, State}.
+
+% handle_info for all other thigs
 handle_call(_Msg, _From, State) ->
     {reply, ok, State}.
 %-----------end of handle_call-------------
 
 
 %--------------handle_cast-----------------
+
+% @doc callbacks for gen_server handle_cast.
+-spec handle_cast(Message, State) -> Result when
+    Message         :: NewReq,
+    NewReq          :: {'newreq', iolist(), iolist(), [{iolist(),iolist()}]},
+    State           :: term(),
+    Result          :: {noreply, State}.
 
 handle_cast({newreq, GTIN, NAME, FullData}, State) ->
     DESC = case lists:keyfind("PROD_DESC",1,FullData) of
@@ -81,15 +111,32 @@ handle_cast(_Msg, State) ->
 
 %--------------handle_info-----------------
 
-%% handle_info for all other thigs
+% @doc callbacks for gen_server handle_info.
+-spec handle_info(Message, State) -> Result when
+    Message :: term(),
+    State   :: term(),
+    Result  :: {noreply, State}.
+
+% handle_info for all other thigs
 handle_info(_Msg, State) ->
     {noreply, State}.
 %-----------end of handle_info-------------
 
+-spec terminate(Reason, State) -> term() when
+    Reason :: 'normal' | 'shutdown' | {'shutdown',term()} | term(),
+    State :: term().
 
 terminate(Reason, State) ->
-    file:close(State#state.ioDevice),
+    _ = file:close(State#state.ioDevice),
     {noreply, Reason, State}.
+
+-spec code_change(OldVsn, State, Extra) -> Result when
+    OldVsn :: Vsn | {down, Vsn},
+    Vsn :: term(),
+    State :: term(),
+    Extra :: term(),
+    Result :: {ok, NewState},
+    NewState :: term().
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.

@@ -134,7 +134,7 @@ is_in_file(Pattern) ->
     
 
 cleanup() ->
-%    file:delete(?TESTFILE),
+    file:delete(?TESTFILE),
     error_logger:tty(false).
 
 
