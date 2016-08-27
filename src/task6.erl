@@ -1,5 +1,21 @@
+%% --------------------------------------------------------------------------------
+%% File:    task6.erl
+%% @author  Oleksii Semilietov <spylik@gmail.com>
+%%
+%% @doc Task6:
+%% Implement an Erlang/OTP application that has a POST /capture method which 
+%% receives input requests like the attached file Test.xml. If PROD_COVER_GTIN, 
+%% PROD_NAME can be captured from a request then the request is accepted, the 
+%% values of PROD_COVER_GTIN, PROD_NAME and additional values of PROD_DESC, 
+%% BRAND_OWNER_NAME are written to external CSV file with 4 columns:
+%% GTIN,NAME,DESC,COMPANY.
+%% 
+%% NOTE: if PROD_DESC, BRAND_OWNER_NAME are missed in an input request then empty 
+%% values will be saved to the CSV.
+%% --------------------------------------------------------------------------------
+
 -module(task6).
--include("deps/teaser/include/utils.hrl").
+%-include("deps/teaser/include/utils.hrl").
 
 -compile(export_all).
 
@@ -16,11 +32,12 @@ process(Bin) ->
     Result :: list().
 
 extract(Bin) ->
-    % strip what we don't need (we need only BaseAttributeValues for dataObjectId="PACK_BASE_UNIT")
+    % we don't need waste resources and parse all xml, so we going to strip what we don't need with BIF
+    % (we need only BaseAttributeValues for dataObjectId="PACK_BASE_UNIT")
     BinS = hd(tl(binary:split(hd(binary:split(hd(tl(binary:split(hd(tl(binary:split(Bin,<<"dataObjectId=\"PACK_BASE_UNIT\"">>))),<<$>>>))),<<"</BaseAttributeValues>">>)),<<"<BaseAttributeValues>">>))),
 
     % since we have only what we exactrly need, we can use sax here.
-    % (need test performance, maybe it make sence to replace it to own solution)
+    % (need test performance, maybe it make sence to replace it with own solution)
     {ok, Values, _Rest} = erlsom:parse_sax(BinS, [], 
         fun ({startElement,[],"value",[],[{attribute,"value",[],[],Val},
                 {attribute,"baseAttrId",[],[],Name},{attribute,"attrType",[],[],"STRING"}]}, Acc) -> 
@@ -30,7 +47,7 @@ extract(Bin) ->
     Values.
 
 % @doc validate if "PROD_COVER_GTIN" and "PROD_NAME" exists in xml
-% we returning here tuple {GTIN, NAME} to avoid lists:keyfind for this variables in future. 
+% we returning tuple here {GTIN, NAME} to avoid lists:keyfind for this variables in future. 
 -spec validate(Elements) -> Result when
     Elements :: list(),
     Result :: boolean().
