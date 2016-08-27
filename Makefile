@@ -5,6 +5,9 @@ TEST_ERLC_OPTS += +warn_export_vars +warn_shadow_vars +warn_obsolete_guard +debu
 ERLC_OPTS += +warn_export_vars +warn_shadow_vars +warn_obsolete_guard +warn_missing_spec -Werror
 
 dep_teaser = git https://github.com/spylik/teaser master
+dep_erlsom = git https://github.com/willemdj/erlsom
+
+DEPS = erlsom
 
 ifeq ($(USER),travis)
     TEST_DEPS += covertool
