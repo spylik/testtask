@@ -17,6 +17,6 @@ endif
 
 SHELL_DEPS = teaser sync lager
 
-SHELL_OPTS = -pa ebin/ test/ -env ERL_LIBS deps -eval 'lager:start(),mlibs:discover()' -run mlibs autotest_on_compile
+SHELL_OPTS = -args_file vm.args -pa ebin/ test/ -env ERL_LIBS deps -eval 'lager:start(),mlibs:discover()' -run mlibs autotest_on_compile
 
 include erlang.mk

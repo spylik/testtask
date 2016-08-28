@@ -32,6 +32,7 @@ process_req(<<"POST">>, true, Req0) ->
     {ok, XML, Req} = cowboy_req:read_body(Req0),
 
     FullData = extract(XML),
+
     case validate(FullData) of
         {Gtin, Name} -> 
             gen_server:cast(task6_fw, {newreq, Gtin, Name, FullData}), 
@@ -40,25 +41,40 @@ process_req(<<"POST">>, true, Req0) ->
             cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain; charset=utf-8">>}, <<"Wrong data.">>, Req)
     end.
 
+extract() -> 
+    Filename = "test/mockdata/Test.xml",
+    {ok, Bin} = file:read_file(Filename),
+    extract(Bin).
+
+
 % @doc extract values and names of values from XML (only from BaseAttributeValues in dataObjectId="PACK_BASE_UNIT")
 -spec extract(Bin) -> Result when
     Bin :: binary(),
     Result :: list().
 
 extract(Bin) ->
+    Size = byte_size(Bin),
+
+    ?debug("size is ~p",[Size]),
+
     % we don't need waste resources and parse all xml, so we going to strip what we don't need with BIF
     % (we need only BaseAttributeValues for dataObjectId="PACK_BASE_UNIT")
-    BinS = hd(tl(binary:split(hd(binary:split(hd(tl(binary:split(hd(tl(binary:split(Bin,<<"dataObjectId=\"PACK_BASE_UNIT\"">>))),<<$>>>))),<<"</BaseAttributeValues>">>)),<<"<BaseAttributeValues>">>))),
+    BinS = hd(binary:split(hd(tl(binary:split(hd(tl(binary:split(Bin,<<"dataObjectId=\"PACK_BASE_UNIT\"">>))),<<$>>>))),<<"</BaseAttributeValues>">>)),
+    AddEnd = unicode:characters_to_binary("</BaseAttributeValues>"),
+    BinF = <<BinS/binary,AddEnd/binary>>,
 
     % since we have only what we exactrly need, we can use sax here.
     % (need test performance, maybe it make sence to replace it with own solution)
-    {ok, Values, _Rest} = erlsom:parse_sax(BinS, [], 
-        fun ({startElement,[],"value",[],[{attribute,"value",[],[],Val},
+    {ok, Values, _Rest} = erlsom:parse_sax(BinF, [], 
+        fun (_Event = {startElement,[],"value",[],[{attribute,"value",[],[],Val},
                 {attribute,"baseAttrId",[],[],Name},{attribute,"attrType",[],[],"STRING"}]}, Acc) -> 
+ %                   ?debug("~p~n", [Event]),
                     [{Name, Val}|Acc];
-            (_Event, Acc) -> Acc 
+            (_Event, Acc) -> 
+%                io:format("~p~n", [Event]),
+                Acc 
         end),
-    ?debug("values is ~p",Values),
+    ?debug("values is ~p",[Values]),
     Values.
 
 % @doc validate if "PROD_COVER_GTIN" and "PROD_NAME" exists in xml

@@ -30,7 +30,8 @@ test6_test_() ->
                             {ok, Bin} = file:read_file(Filename),
                             Data = ?TM:extract(Bin),
                             ?assertEqual(true, is_list(Data)),
-                            ?assertEqual({"PROD_COVER_GTIN", "4600209001493"}, lists:keyfind("PROD_COVER_GTIN",1,Data))
+                            ?assertEqual({"PROD_COVER_GTIN", "4600209001493"}, lists:keyfind("PROD_COVER_GTIN",1,Data)),
+                            ?assertEqual({"GS1_MEMBER_GLN", "4600209999998"}, lists:keyfind("GS1_MEMBER_GLN",1,Data))
                     end
                 }
             ]
