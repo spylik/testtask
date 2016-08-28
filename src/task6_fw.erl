@@ -94,11 +94,11 @@ handle_call(_Msg, _From, State) ->
 handle_cast({newreq, GTIN, NAME, FullData}, State) ->
     DESC = case lists:keyfind("PROD_DESC",1,FullData) of
         {"PROD_DESC", Desc} -> Desc;
-        false -> ""
+        false -> " "
     end,
     COMPANY = case lists:keyfind("BRAND_OWNER_NAME",1,FullData) of 
         {"BRAND_OWNER_NAME", Company} -> Company;
-        false -> ""
+        false -> " "
     end,
     io:fwrite(State#state.ioDevice, "~p,~p,~p,~p~n",[GTIN, NAME, DESC, COMPANY]),
     {noreply, State};

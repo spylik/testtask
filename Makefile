@@ -1,13 +1,14 @@
-PROJECT = testtask
+PROJECT = task6
 
 TEST_ERLC_OPTS += +warn_export_vars +warn_shadow_vars +warn_obsolete_guard +debug_info -Werror
 
-ERLC_OPTS += +warn_export_vars +warn_shadow_vars +warn_obsolete_guard +warn_missing_spec -Werror
+ERLC_OPTS += +warn_export_vars +warn_shadow_vars +warn_obsolete_guard +warn_missing_spec# -Werror
 
 dep_teaser = git https://github.com/spylik/teaser master
 dep_erlsom = git https://github.com/willemdj/erlsom
+dep_cowboy = git https://github.com/ninenines/cowboy
 
-DEPS = erlsom
+DEPS = erlsom cowboy
 
 ifeq ($(USER),travis)
     TEST_DEPS += covertool

@@ -15,15 +15,29 @@
 %% --------------------------------------------------------------------------------
 
 -module(task6).
-%-include("deps/teaser/include/utils.hrl").
-
+-include("deps/teaser/include/utils.hrl").
+% temporary
 -compile(export_all).
 
-process(Bin) -> 
-    FullData = extract(Bin),
+-export([init/2
+    ]).
+
+init(Req0, Opts) ->
+	Method = cowboy_req:method(Req0),
+	HasBody = cowboy_req:has_body(Req0),
+    Req = process_req(Method, HasBody, Req0),
+    {ok, Req, Opts}.
+
+process_req(<<"POST">>, true, Req0) -> 
+    {ok, XML, Req} = cowboy_req:read_body(Req0),
+
+    FullData = extract(XML),
     case validate(FullData) of
-        {Gtin, Name} -> save_csv(Gtin, Name, FullData);
-        false -> false
+        {Gtin, Name} -> 
+            gen_server:cast(task6_fw, {newreq, Gtin, Name, FullData}), 
+            cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain; charset=utf-8">>}, <<"accepted">>, Req);
+        false -> 
+            cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain; charset=utf-8">>}, <<"Wrong data.">>, Req)
     end.
 
 % @doc extract values and names of values from XML (only from BaseAttributeValues in dataObjectId="PACK_BASE_UNIT")
@@ -44,6 +58,7 @@ extract(Bin) ->
                     [{Name, Val}|Acc];
             (_Event, Acc) -> Acc 
         end),
+    ?debug("values is ~p",Values),
     Values.
 
 % @doc validate if "PROD_COVER_GTIN" and "PROD_NAME" exists in xml

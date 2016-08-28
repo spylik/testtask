@@ -104,18 +104,61 @@ genserver_started_test_() ->
                     end},
                 {<<"Must accept newreq cast with full parameters and save it to ?TESTFILE">>,
                     fun() ->
-                        GTIN = integer_to_list(rand:uniform(90)),
-                        NAME = integer_to_list(rand:uniform(90)),
-                        DESCR = integer_to_list(rand:uniform(90)),
-                        BRAND = integer_to_list(rand:uniform(90)),
-                        ?debugVal(DESCR),
-                        ?debugVal(BRAND),
+                        GTIN1 = integer_to_list(rand:uniform(90)),
+                        NAME1 = integer_to_list(rand:uniform(90)),
+                        DESCR1 = integer_to_list(rand:uniform(90)),
+                        BRAND1 = integer_to_list(rand:uniform(90)),
                         ?assertEqual(0,filelib:file_size(?TESTFILE)),
-                        gen_server:cast(?TESTSERVER, {newreq, GTIN, NAME ,[{"PROD_DESC",DESCR},{"BRAND_OWNER_NAME",BRAND}]}),
-                        timer:sleep(5),
+                        gen_server:cast(?TESTSERVER, {newreq, GTIN1, NAME1 ,[{"PROD_DESC",DESCR1},{"BRAND_OWNER_NAME",BRAND1}]}),
+                        timer:sleep(20),
                         ?assert(filelib:file_size(?TESTFILE)>0),
-                        Pattern = lists:concat([GTIN,",",NAME,",",DESCR,",",BRAND,"\n"]),
-                        ?debugVal(is_in_file(Pattern))
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        GTIN2 = integer_to_list(rand:uniform(90)),
+                        NAME2 = integer_to_list(rand:uniform(90)),
+                        DESCR2 = integer_to_list(rand:uniform(90)),
+                        BRAND2 = integer_to_list(rand:uniform(90)),
+                        gen_server:cast(?TESTSERVER, {newreq, GTIN2, NAME2 ,[{"PROD_DESC",DESCR2},{"BRAND_OWNER_NAME",BRAND2}]}),
+                        timer:sleep(20),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN2,"\"",",","\"",NAME2,"\"",",","\"",DESCR2,"\"",",","\"",BRAND2,"\"","\n"]))),
+                        ?assertEqual(ok, ?TESTSERVER:stop()),
+                        ?assertEqual(
+                            false,  
+                            is_pid(whereis(?TESTSERVER))
+                        ),
+                        ?TESTSERVER:start_link(?TESTFILE),
+                        ?assertEqual(
+                            true, 
+                            is_pid(whereis(?TESTSERVER))
+                        ),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN2,"\"",",","\"",NAME2,"\"",",","\"",DESCR2,"\"",",","\"",BRAND2,"\"","\n"]))),
+                        GTIN3 = integer_to_list(rand:uniform(90)),
+                        NAME3 = integer_to_list(rand:uniform(90)),
+                        DESCR3 = integer_to_list(rand:uniform(90)),
+                        BRAND3 = integer_to_list(rand:uniform(90)),
+                        gen_server:cast(?TESTSERVER, {newreq, GTIN3, NAME3 ,[{"PROD_DESC",DESCR3},{"BRAND_OWNER_NAME",BRAND3}]}),
+                        timer:sleep(5),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN2,"\"",",","\"",NAME2,"\"",",","\"",DESCR2,"\"",",","\"",BRAND2,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN3,"\"",",","\"",NAME3,"\"",",","\"",DESCR3,"\"",",","\"",BRAND3,"\"","\n"]))),
+                        GTIN4 = integer_to_list(rand:uniform(90)),
+                        NAME4 = integer_to_list(rand:uniform(90)),
+                        DESCR4 = integer_to_list(rand:uniform(90)),
+                        gen_server:cast(?TESTSERVER, {newreq, GTIN4, NAME4 ,[{"PROD_DESC",DESCR4}]}),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN2,"\"",",","\"",NAME2,"\"",",","\"",DESCR2,"\"",",","\"",BRAND2,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN3,"\"",",","\"",NAME3,"\"",",","\"",DESCR3,"\"",",","\"",BRAND3,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN4,"\"",",","\"",NAME4,"\"",",","\"",DESCR4,"\"",",","\""," ","\"","\n"]))),
+                        GTIN5 = integer_to_list(rand:uniform(90)),
+                        NAME5 = integer_to_list(rand:uniform(90)),
+                        gen_server:cast(?TESTSERVER, {newreq, GTIN5, NAME5 ,[{"PRODX_DESCX","test"}]}),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN1,"\"",",","\"",NAME1,"\"",",","\"",DESCR1,"\"",",","\"",BRAND1,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN2,"\"",",","\"",NAME2,"\"",",","\"",DESCR2,"\"",",","\"",BRAND2,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN3,"\"",",","\"",NAME3,"\"",",","\"",DESCR3,"\"",",","\"",BRAND3,"\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN4,"\"",",","\"",NAME4,"\"",",","\"",DESCR4,"\"",",","\""," ","\"","\n"]))),
+                        ?assert(is_in_file(lists:concat(["\"",GTIN5,"\"",",","\"",NAME5,"\"",",","\""," ","\"",",","\""," ","\"","\n"])))
+
                     end}
 
             ]
@@ -127,8 +170,8 @@ setup_start() -> cleanup(), ?TESTSERVER:start_link(?TESTFILE).
 is_in_file(Pattern) ->
     {ok, Device} = file:open(?TESTFILE, [read]),
     F = fun Loop(P) when P =:= Pattern -> file:close(Device),true;
-            Loop(eof) -> error_logger:warning_msg("going to close"),file:close(Device),false;
-            Loop(P) -> error_logger:warning_msg("data1 is ~p~ndata2 is ~p~n,",[Pattern,P]),Loop(io:get_line(Device, ""))
+            Loop(eof) -> file:close(Device),false;
+            Loop(_P) -> Loop(io:get_line(Device, ""))
         end,
     F("").
     
