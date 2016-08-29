@@ -18,8 +18,6 @@
 
 -module(task6_fw).
 
--include("deps/teaser/include/utils.hrl").
-
 % gen server is here
 -behaviour(gen_server).
 
