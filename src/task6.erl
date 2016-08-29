@@ -29,8 +29,8 @@
     Result :: {ok, cowboy_req:req(), Opts}.
     
 init(Req0, Opts) ->
-	Method = cowboy_req:method(Req0),
-	HasBody = cowboy_req:has_body(Req0),
+    Method = cowboy_req:method(Req0),
+    HasBody = cowboy_req:has_body(Req0),
     Req = process_req(Method, HasBody, Req0),
     {ok, Req, Opts}.
 
