@@ -74,7 +74,7 @@ extract(Bin) ->
 % we returning tuple here {GTIN, NAME} to avoid lists:keyfind for this variables in future. 
 -spec validate(Elements) -> Result when
     Elements :: list(),
-    Result :: boolean().
+    Result :: 'false' | {term(), term()}.
 
 validate(Elements) ->
     try 
