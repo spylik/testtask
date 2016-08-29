@@ -6,7 +6,7 @@
 
 % --------------------------------- fixtures ----------------------------------
 
-test1_test_() ->
+task1_test_() ->
     {setup,
         fun disable_output/0, % disable output for ci
         {inparallel,
