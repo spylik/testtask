@@ -15,13 +15,19 @@
 %% --------------------------------------------------------------------------------
 
 -module(task6).
--include("deps/teaser/include/utils.hrl").
-% temporary
--compile(export_all).
 
--export([init/2
-    ]).
+-define(NOTEST, true).
+-ifdef(TEST).
+    -compile(export_all).
+-endif.
 
+-export([init/2]).
+
+-spec init(Req,Opts) -> Result when
+    Req :: cowboy_req:req(),
+    Opts :: cowboy_req:body_opts(),
+    Result :: {ok, cowboy_req:req(), Opts}.
+    
 init(Req0, Opts) ->
 	Method = cowboy_req:method(Req0),
 	HasBody = cowboy_req:has_body(Req0),
@@ -41,22 +47,12 @@ process_req(<<"POST">>, true, Req0) ->
             cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain; charset=utf-8">>}, <<"Wrong data.">>, Req)
     end.
 
-extract() -> 
-    Filename = "test/mockdata/Test.xml",
-    {ok, Bin} = file:read_file(Filename),
-    extract(Bin).
-
-
 % @doc extract values and names of values from XML (only from BaseAttributeValues in dataObjectId="PACK_BASE_UNIT")
 -spec extract(Bin) -> Result when
     Bin :: binary(),
     Result :: list().
 
 extract(Bin) ->
-    Size = byte_size(Bin),
-
-    ?debug("size is ~p",[Size]),
-
     % we don't need waste resources and parse all xml, so we going to strip what we don't need with BIF
     % (we need only BaseAttributeValues for dataObjectId="PACK_BASE_UNIT")
     BinS = hd(binary:split(hd(tl(binary:split(hd(tl(binary:split(Bin,<<"dataObjectId=\"PACK_BASE_UNIT\"">>))),<<$>>>))),<<"</BaseAttributeValues>">>)),
@@ -64,17 +60,14 @@ extract(Bin) ->
     BinF = <<BinS/binary,AddEnd/binary>>,
 
     % since we have only what we exactrly need, we can use sax here.
-    % (need test performance, maybe it make sence to replace it with own solution)
+    % (need test performance, maybe it make sence to replace it with own solution, cuz it looks like quite slow)
     {ok, Values, _Rest} = erlsom:parse_sax(BinF, [], 
         fun (_Event = {startElement,[],"value",[],[{attribute,"value",[],[],Val},
                 {attribute,"baseAttrId",[],[],Name},{attribute,"attrType",[],[],"STRING"}]}, Acc) -> 
- %                   ?debug("~p~n", [Event]),
-                    [{Name, Val}|Acc];
+                    [{unicode:characters_to_binary(Name), unicode:characters_to_binary(Val)}|Acc];
             (_Event, Acc) -> 
-%                io:format("~p~n", [Event]),
                 Acc 
         end),
-    ?debug("values is ~p",[Values]),
     Values.
 
 % @doc validate if "PROD_COVER_GTIN" and "PROD_NAME" exists in xml
@@ -86,12 +79,9 @@ extract(Bin) ->
 validate(Elements) ->
     try 
         begin
-            {"PROD_COVER_GTIN", GTIN} = lists:keyfind("PROD_COVER_GTIN",1,Elements),
-            {"PROD_NAME", NAME} = lists:keyfind("PROD_NAME",1,Elements),
+            {<<"PROD_COVER_GTIN">>, GTIN} = lists:keyfind(<<"PROD_COVER_GTIN">>,1,Elements),
+            {<<"PROD_NAME">>, NAME} = lists:keyfind(<<"PROD_NAME">>,1,Elements),
             {GTIN, NAME}
         end
     catch _:_ -> false
     end.
-
-save_csv(_Gtin, _Name, _FullDate) -> 
-    ok.

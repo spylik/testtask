@@ -18,7 +18,7 @@
 
 -module(task6_fw).
 
-%-include("deps/teaser/include/utils.hrl").
+-include("deps/teaser/include/utils.hrl").
 
 % gen server is here
 -behaviour(gen_server).
@@ -63,7 +63,17 @@ stop() ->
     Result :: {ok, state()}.
 
 init([Filename]) ->
-    {ok, IoDevice} = file:open(Filename,[append]),
+    IoDevice = case filelib:is_regular(Filename) of
+        false ->
+            {ok, IoDev} = file:open(Filename,[write,binary]),
+            ok = file:write(IoDev,unicode:encoding_to_bom(utf8)),
+            IoDev;
+        true -> 
+            {ok, IoDev} = file:open(Filename,[append]),
+            IoDev
+    end,
+    io:setopts(IoDevice,[{encoding,utf8}]),
+
     {ok, #state{ioDevice = IoDevice}}.
 
 %--------------handle_call----------------
@@ -87,20 +97,20 @@ handle_call(_Msg, _From, State) ->
 % @doc callbacks for gen_server handle_cast.
 -spec handle_cast(Message, State) -> Result when
     Message         :: NewReq,
-    NewReq          :: {'newreq', iolist(), iolist(), [{iolist(),iolist()}]},
+    NewReq          :: {'newreq', binary(), binary(), [{binary(),binary()}]},
     State           :: term(),
     Result          :: {noreply, State}.
 
 handle_cast({newreq, GTIN, NAME, FullData}, State) ->
-    DESC = case lists:keyfind("PROD_DESC",1,FullData) of
-        {"PROD_DESC", Desc} -> Desc;
-        false -> " "
+    DESC = case lists:keyfind(<<"PROD_DESC">>,1,FullData) of
+        {<<"PROD_DESC">>, Desc} -> Desc;
+        false -> <<>>
     end,
-    COMPANY = case lists:keyfind("BRAND_OWNER_NAME",1,FullData) of 
-        {"BRAND_OWNER_NAME", Company} -> Company;
-        false -> " "
+    COMPANY = case lists:keyfind(<<"BRAND_OWNER_NAME">>,1,FullData) of 
+        {<<"BRAND_OWNER_NAME">>, Company} -> Company;
+        false -> <<>>
     end,
-    io:fwrite(State#state.ioDevice, "~p,~p,~p,~p~n",[GTIN, NAME, DESC, COMPANY]),
+    io:fwrite(State#state.ioDevice, "~ts,~ts,~ts,~ts~n",[GTIN,NAME,DESC,COMPANY]),
     {noreply, State};
 
 % handle_cast for all other thigs
