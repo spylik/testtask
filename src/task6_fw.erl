@@ -72,7 +72,7 @@ init([Filename]) ->
             {ok, IoDev} = file:open(Filename,[append]),
             IoDev
     end,
-    io:setopts(IoDevice,[{encoding,utf8}]),
+    ok = io:setopts(IoDevice,[{encoding,utf8}]),
 
     {ok, #state{ioDevice = IoDevice}}.
 

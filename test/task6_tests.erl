@@ -3,10 +3,38 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(TM, task6).
+-define(TESTAPP, task6).
 
 % --------------------------------- fixtures ----------------------------------
+% tests for cover standart otp behaviour
+otp_test_() ->
+    {setup,
+        fun disable_output/0, % setup
+        {inorder,
+            [  
 
-test6_test_() ->
+                {<<"Application able to start via application:ensure_all_started()">>,
+                    fun() ->
+                        application:ensure_all_started(?TESTAPP),
+                        ?assertEqual(
+                            {ok,[]},
+                            application:ensure_all_started(?TESTAPP)
+                        ),
+                        App = application:which_applications(),
+                        ?assert(is_tuple(lists:keyfind(?TESTAPP,1,App)))
+                    end},
+                {<<"Application able to stop via application:stop()">>,
+                    fun() ->
+                        application:stop(?TESTAPP),
+                        App = application:which_applications(),
+                        ?assertEqual(false, is_tuple(lists:keyfind(?TESTAPP,1,App)))
+                end}
+            ]
+        }
+    }.
+
+
+test6_simple_test_() ->
     {setup,
         fun disable_output/0, % disable output for ci
         {inparallel,
@@ -38,6 +66,27 @@ test6_test_() ->
         }
     }.
 
+test6_complex_test_() ->
+    {setup,
+        fun start_app/0,
+        fun cleanup/1,
+        {inparallel,
+            [
+                {<<"Request to webserver must do not crash application and cvs must exists">>,
+                    fun() -> 
+                        os:cmd("curl -X POST -H \"Content-Type: application/soap+xml\" -d @test/mockdata/Test.xml http://localhost:8080"),
+                        App = application:which_applications(),
+                        ?assert(is_tuple(lists:keyfind(?TESTAPP,1,App))),
+                        ?assert(filelib:is_regular("task6.csv"))
+                    end
+                }
+            ]
+        }
+    }.
+
+start_app() -> application:ensure_all_started(?TM).
+
+cleanup(_) -> application:stop(?TM).
 
 disable_output() ->
     error_logger:tty(false).
